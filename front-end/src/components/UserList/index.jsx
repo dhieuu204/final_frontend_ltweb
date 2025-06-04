@@ -6,28 +6,54 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import "./styles.css";
-import fetchModel from "../../lib/fetchModelData";
+const BACKEND_URL = "https://d78t48-8081.csb.app";
 
-function UserList() {
+function UserList({ token }) {
   const [users, setUsers] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchModel("/user/list").then((data) => {
-      if (data) setUsers(data);
-      else console.error("Không thể tải danh sách người dùng.");
-    });
-  }, []);
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/user/list`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.status === 401) {
+          navigate("/login");
+          return;
+        }
+
+        if (!res.ok) {
+          console.error("Unable to load users:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        setUsers(data);
+      } catch (err) {
+        console.error("Error calling /api/user/list:", err);
+      }
+    };
+
+    if (token) {
+      fetchUsers();
+    } else {
+      navigate("/login");
+    }
+  }, [token, navigate]);
 
   return (
     <div>
       <Typography variant="body1">
         This is the user list, which takes up 3/12 of the window. You might
-        choose to use <a href="https://mui.com/components/lists/">Lists</a>{" "}
-        and <a href="https://mui.com/components/dividers/">Dividers</a> to
-        display your users like so:
+        choose to use <a href="https://mui.com/components/lists/">Lists</a> and{" "}
+        <a href="https://mui.com/components/dividers/">Dividers</a> to display
+        your users like so:
       </Typography>
       <List component="nav">
         {users.length > 0 ? (
@@ -52,9 +78,6 @@ function UserList() {
           <Typography variant="body1">No users found.</Typography>
         )}
       </List>
-      <Typography variant="body1">
-        Dữ liệu này được lấy qua <code>fetchModel("/user/list")</code> từ backend.
-      </Typography>
     </div>
   );
 }

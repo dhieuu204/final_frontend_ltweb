@@ -1,33 +1,74 @@
 import React, { useEffect, useState } from "react";
 import { Typography, CircularProgress, Box } from "@mui/material";
-import { useParams, Link } from "react-router-dom";
-import fetchModel from "../../lib/fetchModelData"; // ✅ dùng API thật, không dùng models
+import { useParams, Link, useNavigate } from "react-router-dom";
 
-/**
- * UserDetail - Component hiển thị thông tin chi tiết người dùng
- */
-function UserDetail() {
-  const { userId } = useParams(); // Lấy ID từ URL
+const BACKEND_URL = "https://d78t48-8081.csb.app";
+
+function UserDetail({ token }) {
+  const { userId } = useParams();
+  const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Để hiển thị vòng quay khi đang load
-  const [error, setError] = useState(null);     // Xử lý lỗi fetch
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setLoading(true); // bật trạng thái loading mỗi khi userId đổi
-    fetchModel(`/user/${userId}`).then((data) => {
-      if (data) {
+    const fetchUserDetail = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.status === 401) {
+          navigate("/login");
+          return;
+        }
+
+        if (res.status === 404) {
+          setError("User not found");
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        if (!res.ok) {
+          setError("Failed to fetch user details");
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
         setUser(data);
-        setError(null);
-      } else {
-        setError("User not found or failed to fetch.");
+      } catch (err) {
+        console.error("Error fetching user detail:", err);
+        setError("Network error while fetching user");
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
-  }, [userId]);
+    };
+
+    if (token) {
+      fetchUserDetail();
+    } else {
+      navigate("/login");
+    }
+  }, [userId, token, navigate]);
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
         <CircularProgress />
       </Box>
     );
@@ -37,14 +78,24 @@ function UserDetail() {
     return <Typography color="error">{error}</Typography>;
   }
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <>
       <Typography variant="h5">
         {user.first_name} {user.last_name}
       </Typography>
-      <Typography variant="body1"><b>Location:</b> {user.location}</Typography>
-      <Typography variant="body1"><b>Occupation:</b> {user.occupation}</Typography>
-      <Typography variant="body1"><b>Description:</b> {user.description}</Typography>
+      <Typography variant="body1">
+        <b>Location:</b> {user.location}
+      </Typography>
+      <Typography variant="body1">
+        <b>Occupation:</b> {user.occupation}
+      </Typography>
+      <Typography variant="body1">
+        <b>Description:</b> {user.description}
+      </Typography>
       <Typography variant="body1" sx={{ mt: 2 }}>
         <Link to={`/photos/${userId}`}>View Photos of {user.first_name}</Link>
       </Typography>

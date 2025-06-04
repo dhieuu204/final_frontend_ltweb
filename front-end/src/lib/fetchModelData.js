@@ -6,7 +6,7 @@
  */
 function fetchModel(url) {
   // Gọi API đến server backend tại localhost:8081
-  return fetch("http://localhost:8081/api" + url)
+  return fetch("https://d78t48-8081.csb.app/api" + url)
     .then((response) => {
       if (!response.ok) {
         // Nếu lỗi HTTP, ném ra lỗi để catch xử lý

@@ -8,32 +8,129 @@ import {
   Link as MuiLink,
   CircularProgress,
   Box,
+  TextField,
+  Button,
 } from "@mui/material";
-import { Link, useParams } from "react-router-dom";
-import fetchModel from "../../lib/fetchModelData";
+import { Link, useParams, useNavigate } from "react-router-dom";
 
-function UserPhotos() {
+const BACKEND_URL = "https://d78t48-8081.csb.app"; // Hoặc http://localhost:8081
+
+export default function UserPhotos({ token, currentUser }) {
   const { userId } = useParams();
+  const navigate = useNavigate();
+
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Quản lý state input bình luận cho mỗi photo
+  const [newComments, setNewComments] = useState({});
+
   useEffect(() => {
-    setLoading(true);
-    fetchModel(`/photosOfUser/${userId}`).then((data) => {
-      if (data) {
+    const fetchPhotos = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/photosOfUser/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.status === 401) {
+          navigate("/login");
+          return;
+        }
+
+        if (!res.ok) {
+          setError("Không tìm thấy ảnh cho người dùng này.");
+          setPhotos([]);
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
         setPhotos(data);
-        setError(null);
-      } else {
-        setError("Không tìm thấy ảnh cho người dùng này.");
+      } catch (err) {
+        console.error("Lỗi khi fetch photos:", err);
+        setError("Lỗi mạng khi tải ảnh.");
+        setPhotos([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
-  }, [userId]);
+    };
+
+    if (token) {
+      fetchPhotos();
+    } else {
+      navigate("/login");
+    }
+  }, [userId, token, navigate]);
+
+  const handleCommentSubmit = async (photoId) => {
+    const commentText = (newComments[photoId] || "").trim();
+    if (!commentText) return;
+
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/photosOfUser/comment/${photoId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ comment: commentText }),
+        }
+      );
+
+      if (res.status === 401) {
+        navigate("/login");
+        return;
+      }
+
+      if (!res.ok) {
+        alert("Gửi bình luận thất bại.");
+        return;
+      }
+
+      const data = await res.json(); // data.comment là comment mới
+
+      setPhotos((prevPhotos) =>
+        prevPhotos.map((p) =>
+          p._id === photoId
+            ? {
+                ...p,
+                comments: [
+                  ...(p.comments || []),
+                  {
+                    _id: data.comment._id,
+                    comment: data.comment.comment,
+                    date_time: data.comment.date_time,
+                    user: currentUser,
+                  },
+                ],
+              }
+            : p
+        )
+      );
+
+      setNewComments((prev) => ({ ...prev, [photoId]: "" }));
+    } catch (err) {
+      console.error("Lỗi khi gửi bình luận:", err);
+      alert("Không thể gửi bình luận do lỗi mạng.");
+    }
+  };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
         <CircularProgress />
       </Box>
     );
@@ -54,9 +151,16 @@ function UserPhotos() {
           <Card key={photo._id} sx={{ mb: 4 }}>
             <CardMedia
               component="img"
-              image={require(`../../images/${photo.file_name}`)} // Thư mục images trong /public hoặc cấu hình phù hợp
+              image={`${BACKEND_URL}/api/photosOfUser/file/${photo.file_name}`}
+              // image={require(`../../images/${photo.file_name}`)}
               alt={`Photo by User ID: ${userId}`}
-              sx={{ width: 300, height: "auto", mx: "auto", mt: 2 }}
+              sx={{
+                width: 300,
+                maxHeight: 400,
+                objectFit: "cover",
+                mx: "auto",
+                mt: 2,
+              }}
             />
 
             <CardContent>
@@ -71,8 +175,8 @@ function UserPhotos() {
               </Typography>
 
               {photo.comments && photo.comments.length > 0 ? (
-                photo.comments.map((c) => (
-                  <div key={c._id} style={{ marginBottom: 16 }}>
+                photo.comments.map((c, idx) => (
+                  <Box key={idx} sx={{ mb: 2 }}>
                     <MuiLink
                       component={Link}
                       to={`/users/${c.user._id}`}
@@ -82,18 +186,47 @@ function UserPhotos() {
                       {c.user.first_name} {c.user.last_name}
                     </MuiLink>
 
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
                       {new Date(c.date_time).toLocaleString()}
                     </Typography>
 
                     <Typography variant="body2">{c.comment}</Typography>
 
-                    <Divider sx={{ mt: 2 }} />
-                  </div>
+                    <Divider sx={{ mt: 1 }} />
+                  </Box>
                 ))
               ) : (
                 <Typography variant="body2">No comments.</Typography>
               )}
+
+              {/* Phần thêm comment mới */}
+              <TextField
+                variant="outlined"
+                size="small"
+                fullWidth
+                value={newComments[photo._id] || ""}
+                onChange={(e) =>
+                  setNewComments((prev) => ({
+                    ...prev,
+                    [photo._id]: e.target.value,
+                  }))
+                }
+                placeholder="Viết bình luận..."
+                sx={{ mt: 2 }}
+              />
+
+              <Button
+                variant="contained"
+                size="small"
+                sx={{ mt: 1 }}
+                onClick={() => handleCommentSubmit(photo._id)}
+              >
+                Gửi
+              </Button>
             </CardContent>
           </Card>
         ))
@@ -103,5 +236,3 @@ function UserPhotos() {
     </div>
   );
 }
-
-export default UserPhotos;
