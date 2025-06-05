@@ -231,6 +231,30 @@ const deleteComment = async (photoId, commentId) => {
                 <Typography variant="body2">No comments.</Typography>
               )}
 
+              <Typography variant="body2">{c.comment}</Typography>
+
+              {c.user_id === currentUser._id && (
+                <Box mt={1}>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setEditId(c._id);
+                      setEditText(c.comment);
+                    }}
+                  >
+                    Sửa
+                  </Button>
+              
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => deleteComment(photo._id, c._id)}
+                  >
+                    Xoá
+                  </Button>
+                </Box>
+              )}
+
               {/* Phần thêm comment mới */}
               <TextField
                 variant="outlined"
