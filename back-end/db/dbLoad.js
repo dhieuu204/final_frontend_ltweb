@@ -13,7 +13,7 @@ const versionString = "1.0";
 
 // Thay bằng URL MongoDB của bạn
 const DB_URL =
-  "mongodb+srv://lc13n:kiendang2004@photo.sxinx04.mongodb.net/photo?retryWrites=true&w=majority&appName=photo";
+  "mongodb+srv://duyhieu04:duyhieu04@b22cn306photosharing.hn1aazl.mongodb.net/?retryWrites=true&w=majority&appName=B22CN306photosharing";
 
 async function dbLoad() {
   try {

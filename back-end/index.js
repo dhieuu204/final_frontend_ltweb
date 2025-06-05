@@ -17,7 +17,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "https://d78t48-3000.csb.app",
+    origin: "http://localhost:3000",
   })
 );
 
