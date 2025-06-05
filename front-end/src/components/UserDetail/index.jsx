@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Typography, CircularProgress, Box } from "@mui/material";
 import { useParams, Link, useNavigate } from "react-router-dom";
 
-const BACKEND_URL = "https://d78t48-8081.csb.app";
+const BACKEND_URL = "http://localhost:8081";
 
 function UserDetail({ token }) {
   const { userId } = useParams();

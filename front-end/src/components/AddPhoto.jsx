@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 
-const BACKEND_URL = "https://d78t48-8081.csb.app";
+const BACKEND_URL = "http://localhost:8081";
 
 export default function AddPhoto({ token }) {
   const { userId } = useParams(); // ID người dùng hiện tại

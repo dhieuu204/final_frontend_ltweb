@@ -13,8 +13,7 @@ import {
 } from "@mui/material";
 import { Link, useParams, useNavigate } from "react-router-dom";
 
-const BACKEND_URL = "https://d78t48-8081.csb.app"; // Hoặc http://localhost:8081
-
+const BACKEND_URL = "http://localhost:8081";
 export default function UserPhotos({ token, currentUser }) {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -95,7 +94,7 @@ export default function UserPhotos({ token, currentUser }) {
         return;
       }
 
-      const data = await res.json(); // data.comment là comment mới
+      const data = await res.json();
 
       setPhotos((prevPhotos) =>
         prevPhotos.map((p) =>

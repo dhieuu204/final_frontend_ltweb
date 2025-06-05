@@ -13,7 +13,7 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-const BACKEND_URL = "https://d78t48-8081.csb.app";
+const BACKEND_URL = "http://localhost:8081";
 
 export default function LoginRegister({ setUser, setToken }) {
   const navigate = useNavigate();
